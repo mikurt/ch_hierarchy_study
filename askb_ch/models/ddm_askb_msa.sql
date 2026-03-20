@@ -1,7 +1,7 @@
 {# G_MSA #}
 {{ config(
     materialized='proplum',
-    incremental_strategy='delta_upsert',
+    incremental_strategy='partitions',
     delta_field='load_at',
     merge_keys=['g_scenario', 'g_version', 'month', 'g_entity'],
     engine='MergeTree',
