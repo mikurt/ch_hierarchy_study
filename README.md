@@ -1,4 +1,5 @@
-# ch_hierarchy_study Построение на базе ClickHouse хранилища данных кубов Cognos TM1 для анализа в виде сводной таблицы с иерархическими измерениями
+# ch_hierarchy_study 
+# Построение на базе ClickHouse хранилища данных кубов Cognos TM1 для анализа в виде сводной таблицы с иерархическими измерениями
 
 ## Контекст
 
@@ -24,9 +25,31 @@
 
 ## Структуры в источнике
 
+Лежат в S3 в виде csv, заархивированных gzip.
+
+<img width="1599" height="815" alt="image" src="https://github.com/user-attachments/assets/f55ac95d-1cc6-4093-a168-ed302a34e04b" />
+
+
 - Исходная витрина
 
+|G_Scenario|G_Versions|G_Year|G_Period|G_Currency_Type|G_Currency|G_Entity|G_Forms|G_Adjustments|G_Flows|G_Mine|G_Finance_Contracts|G_Stores_List|G_Appraisal_Model_Items|G_Counterparty|G_Counterparty_Re|G_Cost_Elements_Cash_Flows|G_Project|F_UH_Accounts_Dt|F_UH_Accounts_Kt|G_Accounts|G_Production_Groups|G_Subdivisions|G_MSA_Measures|Value|
+|----------|----------|------|--------|---------------|----------|--------|-------|-------------|-------|------|-------------------|-------------|-----------------------|--------------|-----------------|--------------------------|---------|----------------|----------------|----------|-------------------|--------------|--------------|-----|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_TRANSL-MSA|FL_None|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|sys_For_Feeders|0.0003049217393653|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_AA-MSA_04|FL_None|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|sys_For_Feeders|0.0004432238941072|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_TRANSL-MSA|FL_0301000|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|Automatic|12.85479722125371|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_TRANSL-MSA|FL_0301000|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|sys_ADJ_TRANSL-MSA|-71.2627635276013|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_AA-MSA_04|FL_0301000|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|Automatic|-12.429651304057614|
+
+
 - Измерения (все иерархии измерений имеюи одинаковый формат)
+
+|ElementType|ElementName|Parent|Weight|
+|-----------|-----------|------|------|
+|C|NG_GTotal||0.0|
+||NG_None|NG_GTotal|1.0|
+||NG_Total|NG_GTotal|1.0|
+|N|NG_None||0.0|
+|C|NG_Total||0.0|
 
 ## Варианты реализации иерархического анализа в Clickhouse
 
@@ -91,8 +114,149 @@
         - таблица может использоваться только для Join по заданным при создании ключам, другие запросы к ней не возможны
         - использование такой таблицы сложно и ограничено
 
+## Замеры производительности
+
+Метрики таблиц и словарей, используемых в анализе:
+
+| Имя таблицы | Количество строк | Размер |
+| :--- | :--- | :--- |
+| ddm_msa | 209 231 189 | 1.71 GiB |
+| h_g_production_groups_5 | 35641 | 14.27 MiB |
+| h_g_production_groups_4 | 35641 | 156.37 KiB |
+| d_g_production_groups_h | 36361 | 153.37 KiB |
+| h_g_production_groups | 35641 | 90.21 KiB |
+
+
+| Имя словаря | Статус | Количество строк | Размер |
+| :--- | :--- | :--- | :--- |
+| h_g_production_groups_3 | LOADED | 35641 | 8.00 MiB |
+| h_g_production_groups_1_NG_SP_not_Gold | LOADED | 10840 | 512.23 KiB |
+| h_g_production_groups_2 | LOADED | 36361 | 5.50 MiB |
+| h_g_production_groups_1_NG_GTotal | LOADED | 13026 | 512.23 KiB |
+| h_g_production_groups_1_NG_SP_GTotal | LOADED | 12495 | 512.23 KiB |
+| d_g_production_groups_1 | LOADED | 13121 | 1020.23 KiB |
+
+### Сценарий замеров
+
+Сценарий замеров один и тот же для всех 5 вариантов, см. ниже на примере даборда 1 (т.е. первого варианта).
+
+Без выбора иерархии:
+
+<img width="1589" height="798" alt="image" src="https://github.com/user-attachments/assets/f6d75021-5589-45fe-8dea-40457103b0dc" />
+
+Выбираем иерархию NG_GTotal целиком:
+
+<img width="1597" height="808" alt="image" src="https://github.com/user-attachments/assets/9a8ea0cc-c9c9-4108-a2d9-3bce4f8e3680" />
+
+Выбираем узел NG_Total в этой же иерархии (почти все узлы иерархии):
+
+<img width="1599" height="807" alt="image" src="https://github.com/user-attachments/assets/9b3ad393-0c46-46dc-b01c-0c1925eb19ba" />
+
+Выбираем узел NG_GTotal / NG_01.10Л.01 (один из узлов нижнего уровня):
+
+<img width="1598" height="806" alt="image" src="https://github.com/user-attachments/assets/67447405-922b-46e3-b062-f13c979ffa61" />
+
+Остальные 4 дашборда выглядят точно также, но имеют Pivot и датасеты со своими номерами:
+
+<img width="1599" height="576" alt="image" src="https://github.com/user-attachments/assets/508e9d42-01f1-4c1c-a02c-26e0fd8bb07e" />
+
+<img width="1599" height="810" alt="image" src="https://github.com/user-attachments/assets/208771a4-be22-4280-b9c1-d805f839cf2b" />
+
+<img width="1599" height="626" alt="image" src="https://github.com/user-attachments/assets/b7a86e68-3686-4424-aad0-6d5625af5b01" />
+
+### Результаты замеров
+
+| **Среднее из duration, ms** | **Узел** | | | |
+| :--- | ---: | ---: | ---: | ---: |
+| **Вариант** | **NG_01.10Л.01** | **NG_Total** | **целиком** | **Среднее** |
+| 1 | 1179 | 7420 | 9488 | 6029 |
+| 2 | 1892 | 7855 | 9539 | 6429 |
+| 3 | 865 | 15079 | 18346 | 11430 |
+| 4 | 1386 | 7519 | 7989 | 5631 |
+| 5 | 7166 | 11452 | 11140 | 9919 |
+| без иерархии | | | 4784 | 4784 |
+
+
+| **Среднее из ram_usage, MiB** | **Узел** | | | |
+| :--- | ---: | ---: | ---: | ---: |
+| **Вариант** | **NG_01.10Л.01** | **NG_Total** | **целиком** | **Среднее** |
+| 1 | 13,3 | 90,8 | 98,4 | 67,5 |
+| 2 | 21,3 | 99,9 | 98,0 | 73,1 |
+| 3 | 15,0 | 97,6 | 96,4 | 69,7 |
+| 4 | 37,6 | 116,1 | 118,4 | 90,7 |
+| 5 | 65,4 | 95,3 | 95,4 | 85,3 |
+| без иерархии | | | 74,5 | 74,5 |
+
+| **Среднее из disk_read, GiB** | **Узел** | | | |
+| :--- | ---: | ---: | ---: | ---: |
+| **Вариант** | **NG_01.10Л.01** | **NG_Total** | **целиком** | **Среднее** |
+| 1 | 2,44 | 4,19 | 4,35 | 3,66 |
+| 2 | 2,44 | 4,19 | 4,35 | 3,66 |
+| 3 | 2,44 | 4,21 | 4,36 | 3,67 |
+| 4 | 4,36 | 4,36 | 4,36 | 4,36 |
+| 5 | 4,35 | 4,35 | 4,35 | 4,35 |
+| без иерархии | | | 4,35 | 4,35 |
+
+| **Среднее из rows_read** | **Узел** | | | |
+| :--- | ---: | ---: | ---: | ---: |
+| **Вариант** | **NG_01.10Л.01** | **NG_Total** | **целиком** | **Среднее** |
+| 1 | 209231189 | 209231189 | 209231189 | 209231189 |
+| 2 | 209231189 | 209231189 | 209231189 | 209231189 |
+| 3 | 209266830 | 209266830 | 209266830 | 209266830 |
+| 4 | 209247573 | 209247573 | 209247573 | 209247573 |
+| 5 | 209231189 | 209231189 | 209231189 | 209231189 |
+| без иерархии | | | 209231189 | 209231189 |
+
+### Выводы
+
+Как ни странно, лучшую скорость показал вариант с MergeTree таблицей развернутой иерархии. Он же и самый универсальный. Видимо, для таких таблиц оптимизатор выдает лучшую производительность. Однако при этом потребляется на 30% больше RAM и на 20% больше чтения диска.
+
+Чуть более медленной, но менее требовательной к ресурсам альтернативой является использование иерархических словарей CLickhouse.
+
+Вариант же использования движка Join не имеет смысла, с ним сложно работать и оптимизатор не сокращает таблицу Join перед самим джойном, что приводит к плохой производительности.
+
 ## Развертывание
+
+### Clickhouse
+
+<img width="1514" height="479" alt="image" src="https://github.com/user-attachments/assets/8901bed8-a467-44b9-93a5-ab365e3d8d19" />
+
+См. некоторые настройки в папке clickhouse
+
+### Superset и Airflow
+
+Развернуты в докерах.
+
+<img width="1599" height="278" alt="image" src="https://github.com/user-attachments/assets/8ec038ca-55d2-4d9f-bc1e-2c70f6bfa387" />
+
+В папке airflow см. настройки docker-compose.
+
+### dbt
+
+Установлен dbt локально и в виртуальной среде dbt в докере airflow.
+
+<img width="652" height="284" alt="image" src="https://github.com/user-attachments/assets/8a7c36c5-548f-4b8f-a6f1-875154042a8f" />
+
 
 ## Реализация экстракции, загрузки, трансформации данных в Clickhouse
 
+Для загрузки из S3 используется движок S3. Создается через специальную материализацию dbt - external_table. См. dbt/macros
+
+Витрина через dbt материализуется как incremental, инкремент отслеживается по полю _time - время загрузки в S3.
+
+Измерения через dbt материализуются как таблицы (table) или словари (dictionary).
+
+Для формирования нужной структуры таблиц и словарей используется WITH RECURSIVE. См. dbt/models
+
+Airflow испольузет dag на основе dbt с помошью пакета cosmos. См. dags
+
 ## Реализация анализа в Superset
+
+В Superset для обеспечения выбора узла иерархии используется датасет d_g_production_groups_h. См. superset/datasets.
+
+В основных датасетах используется Jinja, чтобы:
+- обеспечить применение выбранной иерархии (выбранной на датасете d_g_production_groups_h)
+- отфильтровать по выбранному узлу, при выбора иерархии целиком фильтр по узлу не добавляется
+- если никакая иерархия  не выбрана, то не выполнять ни джойнов, ни функций словарей, заполнять знапчение листовым элементом из витрины.
+
+См. superset/datasets
