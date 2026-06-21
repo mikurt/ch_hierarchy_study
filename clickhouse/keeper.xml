@@ -1,0 +1,29 @@
+<clickhouse>
+    <!-- ZooKeeper is used to store metadata about replicas, when using Replicated tables.
+         Optional. If you don't use replicated tables, you could omit that.
+
+         See https://clickhouse.com/docs/en/engines/table-engines/mergetree-family/replication/
+
+         Note: ClickHouse Cloud https://clickhouse.com/cloud has ClickHouse Keeper automatically configured for every service.
+      -->
+
+
+    <zookeeper>
+        <node>
+            <host>10.130.0.18</host>
+            <port>9181</port>
+        </node>
+<!--
+        <node>
+            <host>example2</host>
+            <port>2181</port>
+        </node>
+        <node>
+            <host>example3</host>
+            <port>2181</port>
+        </node>
+-->
+    </zookeeper>
+
+
+</clickhouse>

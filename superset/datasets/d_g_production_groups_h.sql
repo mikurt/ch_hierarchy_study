@@ -1,0 +1,1 @@
+select *, g_production_groups_0 || '  /  ' || g_production_groups as production_group_node from DDM.d_g_production_groups_h order by nr

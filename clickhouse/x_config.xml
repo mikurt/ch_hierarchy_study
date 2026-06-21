@@ -1,0 +1,44 @@
+<clickhouse>
+    <listen_host>0.0.0.0</listen_host>
+    <max_server_memory_usage>13000000000</max_server_memory_usage>
+    <max_server_memory_usage_fraction>0.9</max_server_memory_usage_fraction>
+    <!-- 1. Буфер меток (Index Marks) -->
+    <!-- Хранит индексы в памяти. Для 16 ГБ RAM 5 ГБ — оптимально -->
+    <mark_cache_size>5368709120</mark_cache_size>
+
+    <!-- 2. Буфер несжатых данных -->
+    <!-- Ускоряет повторные запросы к одним и тем же колонкам -->
+    <uncompressed_cache_size>2147483648</uncompressed_cache_size>
+
+    <!-- 3. Буфер для вставок (Insert) -->
+    <!-- Помогает при частых мелких вставках (но лучше вставлять пачками) -->
+    <max_table_size_to_drop>0</max_table_size_to_drop> <!-- Не относится к буферам напрямую, но важно для безопасности -->
+
+    <merge_tree>
+        <!-- 2. Ограничение размера слияний -->
+        <!-- Не даем системе пытаться слить огромные куски в один заход, экономя RAM -->
+        <max_bytes_to_merge_at_min_space_in_pool>1073741824</max_bytes_to_merge_at_min_space_in_pool> <!-- 1 ГБ -->
+        <max_bytes_to_merge_at_max_space_in_pool>16106127360</max_bytes_to_merge_at_max_space_in_pool> <!-- 15 ГБ -->
+
+        <!-- 3. Ускорение записи на диск -->
+        <!-- Объем данных, которые накапливаются в памяти перед записью нового куска (part) -->
+        <min_rows_for_wide_part>1048576</min_rows_for_wide_part>
+        <min_bytes_for_wide_part>268435456</min_bytes_for_wide_part>
+    </merge_tree>
+
+    <!-- 4. Приоритет выполнения -->
+    <!-- Если CPU перегружен, снижаем приоритет фоновых задач относительно запросов SELECT -->
+    <background_merges_mutations_concurrency_ratio>2</background_merges_mutations_concurrency_ratio>
+    <compression>
+        <!-- Метод по умолчанию для новых таблиц -->
+        <case>
+            <method>zstd</method>
+            <level>3</level> <!-- Уровни выше 3 сильно грузят CPU при записи -->
+        </case>
+    </compression>
+    <user_defined_executable_functions_config>
+           <allow_functions>true</allow_functions>
+           <execution_path>/var/lib/clickhouse/user_scripts/</execution_path>
+    </user_defined_executable_functions_config>
+
+</clickhouse>
