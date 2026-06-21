@@ -25,9 +25,31 @@
 
 ## Структуры в источнике
 
+Лежат в S3 в виде csv, заархивированных gzip.
+
+<img width="1599" height="815" alt="image" src="https://github.com/user-attachments/assets/f55ac95d-1cc6-4093-a168-ed302a34e04b" />
+
+
 - Исходная витрина
 
+|G_Scenario|G_Versions|G_Year|G_Period|G_Currency_Type|G_Currency|G_Entity|G_Forms|G_Adjustments|G_Flows|G_Mine|G_Finance_Contracts|G_Stores_List|G_Appraisal_Model_Items|G_Counterparty|G_Counterparty_Re|G_Cost_Elements_Cash_Flows|G_Project|F_UH_Accounts_Dt|F_UH_Accounts_Kt|G_Accounts|G_Production_Groups|G_Subdivisions|G_MSA_Measures|Value|
+|----------|----------|------|--------|---------------|----------|--------|-------|-------------|-------|------|-------------------|-------------|-----------------------|--------------|-----------------|--------------------------|---------|----------------|----------------|----------|-------------------|--------------|--------------|-----|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_TRANSL-MSA|FL_None|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|sys_For_Feeders|0.0003049217393653|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_AA-MSA_04|FL_None|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|sys_For_Feeders|0.0004432238941072|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_TRANSL-MSA|FL_0301000|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|Automatic|12.85479722125371|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_TRANSL-MSA|FL_0301000|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|sys_ADJ_TRANSL-MSA|-71.2627635276013|
+|CT_Actual|SV_Approval|YE_2025|TM_010101|CG_03|CY_840|EN_�00000002|Forms_None|ADJ_AA-MSA_04|FL_0301000|MM_None|TR03_None|MT_None|CIM_None|CP_None|CP_None|CE_None|IP_None|Dt_35020000|Kt_None|AC_112030100|NG_None|GD_None|Automatic|-12.429651304057614|
+
+
 - Измерения (все иерархии измерений имеюи одинаковый формат)
+
+|ElementType|ElementName|Parent|Weight|
+|-----------|-----------|------|------|
+|C|NG_GTotal||0.0|
+||NG_None|NG_GTotal|1.0|
+||NG_Total|NG_GTotal|1.0|
+|N|NG_None||0.0|
+|C|NG_Total||0.0|
 
 ## Варианты реализации иерархического анализа в Clickhouse
 
@@ -195,6 +217,46 @@
 
 ## Развертывание
 
+### Clickhouse
+
+<img width="1514" height="479" alt="image" src="https://github.com/user-attachments/assets/8901bed8-a467-44b9-93a5-ab365e3d8d19" />
+
+См. некоторые настройки в папке clickhouse
+
+### Superset и Airflow
+
+Развернуты в докерах.
+
+<img width="1599" height="278" alt="image" src="https://github.com/user-attachments/assets/8ec038ca-55d2-4d9f-bc1e-2c70f6bfa387" />
+
+В папке airflow см. настройки docker-compose.
+
+### dbt
+
+Установлен dbt локально и в виртуальной среде dbt в докере airflow.
+
+<img width="652" height="284" alt="image" src="https://github.com/user-attachments/assets/8a7c36c5-548f-4b8f-a6f1-875154042a8f" />
+
+
 ## Реализация экстракции, загрузки, трансформации данных в Clickhouse
 
+Для загрузки из S3 используется движок S3. Создается через специальную материализацию dbt - external_table. См. dbt/macros
+
+Витрина через dbt материализуется как incremental, инкремент отслеживается по полю _time - время загрузки в S3.
+
+Измерения через dbt материализуются как таблицы (table) или словари (dictionary).
+
+Для формирования нужной структуры таблиц и словарей используется WITH RECURSIVE. См. dbt/models
+
+Airflow испольузет dag на основе dbt с помошью пакета cosmos. См. dags
+
 ## Реализация анализа в Superset
+
+В Superset для обеспечения выбора узла иерархии используется датасет d_g_production_groups_h. См. superset/datasets.
+
+В основных датасетах используется Jinja, чтобы:
+- обеспечить применение выбранной иерархии (выбранной на датасете d_g_production_groups_h)
+- отфильтровать по выбранному узлу, при выбора иерархии целиком фильтр по узлу не добавляется
+- если никакая иерархия  не выбрана, то не выполнять ни джойнов, ни функций словарей, заполнять знапчение листовым элементом из витрины.
+
+См. superset/datasets
