@@ -114,6 +114,34 @@
 | h_g_production_groups_1_NG_SP_GTotal | LOADED | 12495 | 512.23 KiB |
 | d_g_production_groups_1 | LOADED | 13121 | 1020.23 KiB |
 
+### Сценарий замеров
+
+Сценарий замеров один и тот же для всех 5 вариантов, см. ниже на примере даборда 1 (т.е. первого варианта).
+
+Без выбора иерархии:
+
+<img width="1589" height="798" alt="image" src="https://github.com/user-attachments/assets/f6d75021-5589-45fe-8dea-40457103b0dc" />
+
+Выбираем иерархию NG_GTotal целиком:
+
+<img width="1597" height="808" alt="image" src="https://github.com/user-attachments/assets/9a8ea0cc-c9c9-4108-a2d9-3bce4f8e3680" />
+
+Выбираем узел NG_Total в этой же иерархии (почти все узлы иерархии):
+
+<img width="1599" height="807" alt="image" src="https://github.com/user-attachments/assets/9b3ad393-0c46-46dc-b01c-0c1925eb19ba" />
+
+Выбираем узел NG_GTotal / NG_01.10Л.01 (один из узлов нижнего уровня):
+
+<img width="1598" height="806" alt="image" src="https://github.com/user-attachments/assets/67447405-922b-46e3-b062-f13c979ffa61" />
+
+Остальные 4 дашборда выглядят точно также, но имеют Pivot и датасеты со своими номерами:
+
+<img width="1599" height="576" alt="image" src="https://github.com/user-attachments/assets/508e9d42-01f1-4c1c-a02c-26e0fd8bb07e" />
+
+<img width="1599" height="810" alt="image" src="https://github.com/user-attachments/assets/208771a4-be22-4280-b9c1-d805f839cf2b" />
+
+<img width="1599" height="626" alt="image" src="https://github.com/user-attachments/assets/b7a86e68-3686-4424-aad0-6d5625af5b01" />
+
 
 ## Развертывание
 
